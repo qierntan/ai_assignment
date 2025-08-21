@@ -1,4 +1,4 @@
-Gender (0 - Male, 1 - Female),Age,Academic Pressure,Study Satisfaction,Sleep Duration (Hours),Dietary Habits (0 - Healthy, 1 - Moderate, 2 - Unhealthy),Have you ever had suicidal thoughts ? (1 - 1, 0 - 0),Study Hours,Financial Stress,Family History of Mental Illness (1 -Yes, 0 - No),Depression (1 - Yes, 0 - No)
+Gender,Age,Academic Pressure,Study Satisfaction,Sleep Duration (Hours),Dietary Habit,Have you ever had suicidal thoughts ?,Study Hours,Financial Stress,Family History of Mental Illness,Depression
 0,28,2.0,4.0,7-8 ,1,1,9,2,1,0
 0,28,4.0,5.0,5-6 ,0,1,7,1,1,0
 0,25,1.0,3.0,5-6 ,2,1,10,4,0,1
