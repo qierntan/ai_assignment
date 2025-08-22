@@ -1,0 +1,11 @@
+{
+  "features": [
+    "Gender",
+    "Academic_Pressure",
+    "Study_Satisfaction",
+    "Sleep_Duration",
+    "Dietary_Habits",
+    "Financial_Stress",
+    "Family_History"
+  ]
+}
