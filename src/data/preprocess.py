@@ -7,34 +7,15 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-RAW_TARGET_COL = "Depression (1 - Yes, 0 - No)"
-
-
 def _normalize_headers(df: pd.DataFrame) -> pd.DataFrame:
     mapping: Dict[str, str] = {
-        "Gender (0 - Male, 1 - Female)": "Gender",
         "Gender": "Gender",
-        "Age": "Age",
         "Academic Pressure": "Academic_Pressure",
-        "Academic_Pressure": "Academic_Pressure",
         "Study Satisfaction": "Study_Satisfaction",
-        "Study_Satisfaction": "Study_Satisfaction",
         "Sleep Duration (Hours)": "Sleep_Duration",
-        "Sleep_Duration": "Sleep_Duration",
-        "Dietary Habits (0 - Healthy, 1 - Moderate, 2 - Unhealthy)": "Dietary_Habits",
-        "Dietary Habit": "Dietary_Habits",
-        "Dietary_Habits": "Dietary_Habits",
-        "Have you ever had suicidal thoughts ? (1 - 1, 0 - 0)": "Suicidal_Thoughts",
-        "Suicidal Thoughts": "Suicidal_Thoughts",
-        "Suicidal_Thoughts": "Suicidal_Thoughts",
-        "Study Hours": "Study_Hours",
-        "Study_Hours": "Study_Hours",
+        "Dietary Habit": "Dietary_Habit",
         "Financial Stress": "Financial_Stress",
-        "Financial_Stress": "Financial_Stress",
-        "Family History of Mental Illness (1 -Yes, 0 - No)": "Family_History",
         "Family History of Mental Illness": "Family_History",
-        "Family_History": "Family_History",
-        RAW_TARGET_COL: "Depression",
         "Depression": "Depression",
     }
     cols = [c.strip() for c in df.columns]
@@ -66,23 +47,19 @@ def load_dataset(csv_path: str | Path) -> Tuple[pd.DataFrame, pd.Series]:
         df["Sleep_Duration"] = _coerce_sleep_duration(df["Sleep_Duration"]) 
 
     # Ensure numeric types for all features where applicable
-    desired_numeric_cols: List[str] = [
+    numeric_cols: List[str] = [
         "Gender",
-        "Age",
         "Academic_Pressure",
         "Study_Satisfaction",
         "Sleep_Duration",
-        "Dietary_Habits",
-        "Suicidal_Thoughts",
-        "Study_Hours",
+        "Dietary_Habit",
         "Financial_Stress",
         "Family_History",
     ]
-    # Keep only columns that actually exist in the provided CSV
-    numeric_cols: List[str] = [c for c in desired_numeric_cols if c in df.columns]
 
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
 
     # Drop rows with missing target
     if "Depression" not in df.columns:
@@ -91,7 +68,8 @@ def load_dataset(csv_path: str | Path) -> Tuple[pd.DataFrame, pd.Series]:
 
     # Simple imputation for numeric features
     for col in numeric_cols:
-        df[col] = df[col].fillna(df[col].median())
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].median())
 
     X = df[numeric_cols]
     y = df["Depression"].astype(int)

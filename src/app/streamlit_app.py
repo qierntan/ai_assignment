@@ -26,31 +26,60 @@ def load_feature_info():
             return json.load(f)
     return {"features": [
         "Gender",
-        "Age",
         "Academic_Pressure",
         "Study_Satisfaction",
         "Sleep_Duration",
-        "Dietary_Habits",
-        "Suicidal_Thoughts",
-        "Study_Hours",
+        "Dietary_Habit",
         "Financial_Stress",
         "Family_History",
     ]}
 
 
+def convert_sleep_duration(sleep_str: str) -> float:
+    """Convert sleep duration string to numeric value"""
+    mapping = {
+        "< 5": 4.5,
+        "5-6": 5.5,
+        "7-8": 7.5,
+        "> 8": 9.0,
+    }
+    return mapping.get(sleep_str, 7.5)  # default to 7.5 if not found
+
+
 def sidebar_inputs(features: list[str]) -> pd.DataFrame:
     st.sidebar.header("Input Features")
     inputs = {}
-    inputs["Gender"] = st.sidebar.selectbox("Gender (0=Male,1=Female)", [0, 1], index=0)
-    inputs["Age"] = st.sidebar.number_input("Age", min_value=15, max_value=100, value=25)
+    
+    # Gender: 0=Male, 1=Female
+    inputs["Gender"] = st.sidebar.selectbox("Gender", ["Male", "Female"], index=0)
+    inputs["Gender"] = 0 if inputs["Gender"] == "Male" else 1
+    
+    # Academic Pressure: 1.0 to 5.0
     inputs["Academic_Pressure"] = st.sidebar.slider("Academic Pressure (1-5)", 1.0, 5.0, 3.0, step=1.0)
+    
+    # Study Satisfaction: 1.0 to 5.0
     inputs["Study_Satisfaction"] = st.sidebar.slider("Study Satisfaction (1-5)", 1.0, 5.0, 3.0, step=1.0)
-    inputs["Sleep_Duration"] = st.sidebar.slider("Sleep Duration (hours)", 3.0, 10.0, 7.5, step=0.5)
-    inputs["Dietary_Habits"] = st.sidebar.selectbox("Dietary Habits (0=Healthy,1=Moderate,2=Unhealthy)", [0, 1, 2], index=1)
-    inputs["Suicidal_Thoughts"] = st.sidebar.selectbox("Suicidal Thoughts (0/1)", [0, 1], index=0)
-    inputs["Study_Hours"] = st.sidebar.number_input("Daily Study Hours", min_value=0.0, max_value=16.0, value=4.0, step=0.5)
-    inputs["Financial_Stress"] = st.sidebar.slider("Financial Stress (0-5)", 0.0, 5.0, 2.0, step=1.0)
-    inputs["Family_History"] = st.sidebar.selectbox("Family History Mental Illness (0/1)", [0, 1], index=0)
+    
+    # Sleep Duration: categorical values from dataset
+    sleep_options = ["< 5", "5-6", "7-8", "> 8"]
+    inputs["Sleep_Duration"] = st.sidebar.selectbox("Sleep Duration (Hours)", sleep_options, index=2)
+    
+    # Dietary Habit: 0=Healthy, 1=Moderate, 2=Unhealthy (use numeric values directly)
+    dietary_options = ["Healthy (0)", "Moderate (1)", "Unhealthy (2)"]
+    inputs["Dietary_Habit"] = st.sidebar.selectbox("Dietary Habit", dietary_options, index=1)
+    inputs["Dietary_Habit"] = dietary_options.index(inputs["Dietary_Habit"])
+    
+    # Financial Stress: 0 to 5
+    inputs["Financial_Stress"] = st.sidebar.slider("Financial Stress (0-5)", 0, 5, 2, step=1)
+    
+    # Family History: 0=No, 1=Yes
+    family_options = ["No", "Yes"]
+    inputs["Family_History"] = st.sidebar.selectbox("Family History of Mental Illness", family_options, index=0)
+    inputs["Family_History"] = 0 if inputs["Family_History"] == "No" else 1
+    
+    # Convert sleep duration to numeric
+    inputs["Sleep_Duration"] = convert_sleep_duration(inputs["Sleep_Duration"])
+    
     row = {f: inputs.get(f, 0) for f in features}
     return pd.DataFrame([row])
 
@@ -58,6 +87,7 @@ def sidebar_inputs(features: list[str]) -> pd.DataFrame:
 def main():
     st.title("Student Mental Health Prediction")
     st.write("Predict likelihood of depression using SVM, Random Forest, and Logistic Regression.")
+    st.write("Based on the Depression Student Dataset with features: Gender, Academic Pressure, Study Satisfaction, Sleep Duration, Dietary Habit, Financial Stress, and Family History.")
 
     feature_info = load_feature_info()
     features = feature_info.get("features", [])
