@@ -16,7 +16,7 @@ Place the dataset file at the project root (already included):
 
 Install dependencies:
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Train and Evaluate
@@ -38,7 +38,7 @@ On success, you will see a metrics table printed and the following files created
 
 ### Run the Streamlit App
 ```bash
-streamlit run src/app/streamlit_app.py
+python -m streamlit run src/app/streamlit_app.py
 ```
 In the sidebar, set feature values and choose a model to predict. If models aren’t found, run the training command above first.
 
