@@ -5,10 +5,3 @@ streamlit
 matplotlib
 seaborn
 joblib
-numpy
-pandas
-scikit-learn
-streamlit
-matplotlib
-seaborn
-joblib
