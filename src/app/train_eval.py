@@ -63,7 +63,7 @@ def train_single(csv_path: str, out_dir: str, model_name: str) -> Dict[str, Dict
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train and evaluate student depression models")
-    parser.add_argument("--csv", type=str, default="Modified_Depression_Student_Dataset_v4.csv", help="Path to CSV dataset")
+    parser.add_argument("--csv", type=str, default="Depression_Student_Dataset.csv", help="Path to CSV dataset")
     parser.add_argument("--out", type=str, default="models", help="Output directory for models and metrics")
     parser.add_argument(
         "--model",

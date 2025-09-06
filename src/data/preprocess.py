@@ -79,7 +79,7 @@ def load_dataset(csv_path: str | Path) -> Tuple[pd.DataFrame, pd.Series]:
 def train_test_split_dataset(
     X: pd.DataFrame,
     y: pd.Series,
-    test_size: float = 0.2,
+    test_size: float = 0.3,
     random_state: int = 42,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
