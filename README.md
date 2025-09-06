@@ -8,7 +8,7 @@ This project builds a supervised machine learning system to predict the likeliho
 
 ### Dataset
 Place the dataset file at the project root (already included):
-`Depression Student Dataset.csv`
+`Modified_Depression_Student_Dataset_v4.csv`
 
 ### Requirements
 - Python 3.10+ (Windows: install from Microsoft Store or `python.org`)
@@ -22,12 +22,12 @@ python -m pip install -r requirements.txt
 ### Train and Evaluate
 This trains SVM, Random Forest, and Logistic Regression and saves models and metrics to `models/`.
 ```bash
-python -m src.app.train_eval --csv "Depression Student Dataset.csv" --out models
+python -m src.app.train_eval --csv "Depression_Student_Dataset.csv" --out models
 ```
 
 Train a single model (e.g., Random Forest) only:
 ```bash
-python -m src.app.train_eval --csv "Depression Student Dataset.csv" --out models --model random_forest
+python -m src.app.train_eval --csv "Depression_Student_Dataset.csv" --out models --model random_forest
 ```
 On success, you will see a metrics table printed and the following files created:
 - `models/svm.joblib`
@@ -63,3 +63,8 @@ Depression Student Dataset.csv
 - Sleep duration strings (e.g., "< 5", "5-6", "7-8", "> 8") are mapped to representative numeric values.
 - Numeric features are imputed (median) and standardized within pipelines.
 - Class probability is shown when the model supports it (`predict_proba`).
+
+
+Easy Steps 
+1. python -m pip install -r requirements.txt
+2. python -m streamlit run src/app/streamlit_app.py
