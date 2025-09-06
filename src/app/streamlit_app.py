@@ -10,6 +10,7 @@ from datetime import datetime
 from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from src.utils.io import save_json
+import io
 
 
 MODELS_DIR = Path("models")
@@ -222,6 +223,27 @@ def create_metrics_comparison_chart(metrics_dict, metric_name, title):
     # Add value labels on bars
     fig.update_traces(texttemplate='%{y:.4f}', textposition='outside')
     
+    # Calculate max value and set y-axis range to accommodate text labels
+    max_value = max(values) if values else 1
+    y_range_max = max_value * 1.15  # Add 15% more space above the highest bar
+    
+    # Adjust layout to prevent text cutoff
+    fig.update_layout(
+        margin=dict(t=100, b=80, l=60, r=60),  # Even more top margin
+        height=500,  # Increase height further
+        showlegend=False,  # Hide legend to save space
+        yaxis=dict(
+            range=[0, y_range_max],  # Set explicit y-axis range
+            automargin=True  # Enable automatic margin adjustment
+        )
+    )
+    
+    # Ensure text labels are fully visible
+    fig.update_traces(
+        textfont_size=12,
+        textfont_color='black'
+    )
+    
     return fig
 
 
@@ -242,6 +264,27 @@ def create_full_dataset_chart(metrics_dict, metric_name, title):
     # Add value labels on bars
     fig.update_traces(texttemplate='%{y:.4f}', textposition='outside')
     
+    # Calculate max value and set y-axis range to accommodate text labels
+    max_value = max(values) if values else 1
+    y_range_max = max_value * 1.15  # Add 15% more space above the highest bar
+    
+    # Adjust layout to prevent text cutoff
+    fig.update_layout(
+        margin=dict(t=100, b=80, l=60, r=60),  # Even more top margin
+        height=500,  # Increase height further
+        showlegend=False,  # Hide legend to save space
+        yaxis=dict(
+            range=[0, y_range_max],  # Set explicit y-axis range
+            automargin=True  # Enable automatic margin adjustment
+        )
+    )
+    
+    # Ensure text labels are fully visible
+    fig.update_traces(
+        textfont_size=12,
+        textfont_color='black'
+    )
+    
     return fig
 
 
@@ -260,6 +303,43 @@ def add_prediction_to_history(model_name, inputs, prediction, probability):
     # Keep only last 50 predictions
     if len(st.session_state.prediction_history) > 50:
         st.session_state.prediction_history = st.session_state.prediction_history[-50:]
+
+
+def convert_history_to_csv():
+    """Convert prediction history to CSV format"""
+    if not st.session_state.prediction_history:
+        return None
+    
+    # Flatten the prediction history for CSV export with prioritized order
+    csv_data = []
+    for record in st.session_state.prediction_history:
+        row = {
+            'Timestamp': record['timestamp'],
+            'Model': record['model'],
+            'Prediction': record['prediction'],
+            'Probability': record['probability']
+        }
+        # Add input features with capitalized names
+        for feature, value in record['inputs'].items():
+            # Convert feature names to proper case
+            formatted_feature = feature.replace('_', ' ').title()
+            row[formatted_feature] = value
+        csv_data.append(row)
+    
+    # Convert to DataFrame and reorder columns to prioritize important information
+    df = pd.DataFrame(csv_data)
+    
+    # Define column order - most important first
+    priority_columns = ['Timestamp', 'Model', 'Prediction', 'Probability']
+    feature_columns = [col for col in df.columns if col not in priority_columns]
+    ordered_columns = priority_columns + feature_columns
+    
+    # Reorder DataFrame columns
+    df = df[ordered_columns]
+    
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    return csv_buffer.getvalue()
 
 
 def train_models_interactive(test_size, random_state=42):
@@ -321,6 +401,14 @@ def get_feature_descriptions():
 
 
 def main():
+    # Set page config for wider layout
+    st.set_page_config(
+        page_title="Student Mental Health Prediction Dashboard",
+        page_icon="🧠",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
+    
     st.title("Student Mental Health Prediction Dashboard")
     st.write("Comprehensive analysis and prediction of student depression using machine learning models.")
     
@@ -347,7 +435,7 @@ def main():
     with tab1:
         st.header("🔮 Make Predictions")
         
-        col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([3, 2])
         
         with col1:
             st.subheader("📝 Input Features")
@@ -377,6 +465,17 @@ def main():
         with col2:
             st.subheader("📋 Prediction History")
             if st.session_state.prediction_history:
+                # Add download button
+                csv_data = convert_history_to_csv()
+                if csv_data:
+                    st.download_button(
+                        label="📥 Download History as CSV",
+                        data=csv_data,
+                        file_name=f"Prediction History {datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                        mime="text/csv",
+                        help="Download all prediction history as a CSV file"
+                    )
+                
                 # Show last 10 predictions in expandable format
                 recent_predictions = st.session_state.prediction_history[-10:]
                 for pred in reversed(recent_predictions):
@@ -443,7 +542,7 @@ def main():
         st.header("🤖 Interactive Model Training")
         st.write("Train models with custom train-test split and compare performance on both training and testing sets.")
         
-        col1, col2 = st.columns([1, 2])
+        col1, col2 = st.columns([1, 3])
         
         with col1:
             st.subheader("Training Configuration")
@@ -618,7 +717,7 @@ def main():
                 st.dataframe(metrics_df, use_container_width=True)
                 
                 # Create comparison charts
-                col1, col2 = st.columns(2)
+                col1, col2 = st.columns([1, 1])
                 
                 with col1:
                     fig_acc = create_metrics_comparison_chart(test_metrics, 'accuracy', 'Accuracy Comparison')
@@ -637,7 +736,7 @@ def main():
             # MSE and RMSE sections
             st.subheader("📉 Error Metrics Analysis")
             
-            col_mse, col_rmse = st.columns(2)
+            col_mse, col_rmse = st.columns([1, 1])
             
             with col_mse:
                 st.markdown("### Mean Squared Error (MSE)")
@@ -690,7 +789,7 @@ def main():
                     st.subheader("📈 Performance Visualization")
                     
                     # Comparison charts
-                    col1, col2 = st.columns(2)
+                    col1, col2 = st.columns([1, 1])
                     
                     with col1:
                         fig_full_acc = create_full_dataset_chart(full_metrics, 'accuracy', 'Full Dataset Accuracy')
