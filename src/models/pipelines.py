@@ -35,21 +35,23 @@ def build_models(numeric_features: list[str]) -> Dict[str, Pipeline]:
     svm_pipeline = Pipeline(
         steps=[
             ("preprocess", preprocessor),
-            ("clf", SVC(kernel="rbf", probability=True, C=1.0, gamma="scale", random_state=42)),
+            ("clf", SVC(kernel="rbf", probability=True, C=1.0, gamma="scale",
+            random_state=42, class_weight="balanced")),
         ]
     )
 
     rf_pipeline = Pipeline(
         steps=[
             ("preprocess", preprocessor),
-            ("clf", RandomForestClassifier(n_estimators=300, max_depth=None, random_state=42)),
+            ("clf", RandomForestClassifier(n_estimators=300, max_depth=None, random_state=42,
+            n_jobs=-1, class_weight="balanced")),
         ]
     )
 
     lr_pipeline = Pipeline(
         steps=[
             ("preprocess", preprocessor),
-            ("clf", LogisticRegression(max_iter=1000, solver="lbfgs")),
+            ("clf", LogisticRegression(max_iter=1000, solver="lbfgs", class_weight="balanced")),
         ]
     )
 

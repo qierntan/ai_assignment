@@ -338,12 +338,12 @@ def convert_history_to_csv():
     return csv_buffer.getvalue()
 
 
-def train_models_interactive(test_size, random_state=42):
+def train_models_interactive(test_size, random_state=42, use_smote=False):
     """Train models with custom test size and return both train and test metrics"""
     try:
-        from src.data.preprocess import load_dataset, train_test_split_dataset
+        from src.data.preprocess import load_dataset, train_test_split_dataset, apply_smote
         from src.models.pipelines import build_models, evaluate, save_model
-        
+
         # Load dataset
         X, y = load_dataset("Depression_Student_Dataset.csv")
         
@@ -351,6 +351,10 @@ def train_models_interactive(test_size, random_state=42):
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size/100, random_state=random_state, stratify=y
         )
+
+        # Apply SMOTE if selected
+        if use_smote:
+            X_train, y_train = apply_smote(X_train, y_train, random_state=random_state)
         
         # Build models
         feature_names = list(X.columns)
@@ -374,6 +378,11 @@ def train_models_interactive(test_size, random_state=42):
         
         # Save test metrics to file
         save_json(MODELS_DIR / "metrics.json", test_metrics)
+
+        if use_smote:
+            st.info("⚖️ Models trained with SMOTE oversampling applied.")
+        else:
+            st.info("📊 Models trained without oversampling.")
         
         return train_metrics, test_metrics, len(X_train), len(X_test)
         
@@ -562,19 +571,76 @@ def main():
                 value=42,
                 help="Random seed for reproducible results"
             )
+
+            use_smote = st.checkbox("Apply SMOTE Oversampling", value=False)
             
             if st.button("🚀 Train Models", type="primary"):
-                with st.spinner("Training models..."):
-                    train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(test_size, random_state)
-                    
+                from collections import Counter
+                from src.data.preprocess import load_dataset
+
+                X, y = load_dataset("Depression_Student_Dataset.csv")
+                class_counts = Counter(y)
+                majority = max(class_counts.values())
+                minority = min(class_counts.values())
+                imbalance_ratio = minority / majority
+
+                st.write("📊 Class distribution (original):", dict(class_counts))
+
+                if use_smote:  
+                    if imbalance_ratio > 0.9:  # nearly balanced
+                        st.warning("⚠️ Dataset looks balanced. Do you still want to apply SMOTE?")
+                        st.session_state.confirm_smote = True
+                    else:
+                        with st.spinner("Training Models..."):
+                            train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
+                                test_size, random_state, use_smote=True
+                            )
+                        if train_metrics and test_metrics:
+                                st.success("✅ Models trained successfully!")
+                                
+                                # Store metrics in session state for display
+                                st.session_state.train_metrics = train_metrics
+                                st.session_state.test_metrics = test_metrics
+                                st.session_state.train_samples = train_samples
+                                st.session_state.test_samples = test_samples
+                else:
+                    if imbalance_ratio < 0.3:  # strongly imbalanced 
+                        st.warning("⚠️ Dataset is imbalanced. Do you want to apply SMOTE for fairer training?")
+                        st.session_state.confirm_smote = True
+                    else:
+                        # No need for confirmation, proceed training directly
+                        with st.spinner("Training Models..."):
+                            train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
+                                test_size, random_state, use_smote=use_smote
+                            )
+                        if train_metrics and test_metrics:
+                                    st.success("✅ Models trained successfully!")
+                                    
+                                    # Store metrics in session state for display
+                                    st.session_state.train_metrics = train_metrics
+                                    st.session_state.test_metrics = test_metrics
+                                    st.session_state.train_samples = train_samples
+                                    st.session_state.test_samples = test_samples
+
+            # Confirmation choice
+            if st.session_state.get("confirm_smote", False):
+                choice = st.radio("Proceed with SMOTE?", ["Yes, apply SMOTE", "No, skip SMOTE"])
+
+                if st.button("👉 Confirm & Train"):
+                    with st.spinner("Training Models..."):
+                        train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
+                            test_size, random_state, use_smote=(choice == "Yes, apply SMOTE")
+                        )
                     if train_metrics and test_metrics:
                         st.success("✅ Models trained successfully!")
-                        
+                                
                         # Store metrics in session state for display
                         st.session_state.train_metrics = train_metrics
                         st.session_state.test_metrics = test_metrics
                         st.session_state.train_samples = train_samples
                         st.session_state.test_samples = test_samples
+                        st.session_state.confirm_smote = False
+                        st.rerun()
         
         with col2:
             if 'train_metrics' in st.session_state and 'test_metrics' in st.session_state:
