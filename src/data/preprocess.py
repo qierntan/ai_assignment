@@ -5,6 +5,7 @@ from typing import Dict, Tuple, List
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
 
 
 def _normalize_headers(df: pd.DataFrame) -> pd.DataFrame:
@@ -73,6 +74,7 @@ def load_dataset(csv_path: str | Path) -> Tuple[pd.DataFrame, pd.Series]:
 
     X = df[numeric_cols]
     y = df["Depression"].astype(int)
+
     return X, y
 
 
@@ -91,4 +93,11 @@ def save_feature_info(path: str | Path, feature_names: List[str]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         json.dump({"features": feature_names}, f, indent=2)
 
-
+def apply_smote(X: pd.DataFrame, y: pd.Series, random_state: int = 42) -> Tuple[pd.DataFrame, pd.Series]:
+    """
+    Apply SMOTE oversampling to balance the dataset.
+    Returns a resampled X and y.
+    """
+    smote = SMOTE(random_state=random_state)
+    X_resampled, y_resampled = smote.fit_resample(X, y)
+    return X_resampled, y_resampled
