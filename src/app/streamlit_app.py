@@ -574,6 +574,11 @@ def main():
 
             use_smote = st.checkbox("Apply SMOTE Oversampling", value=False)
             
+            if "confirm_needed" not in st.session_state:
+                st.session_state.confirm_needed = False
+            if "confirm_choice" not in st.session_state:
+                st.session_state.confirm_choice = None
+
             if st.button("🚀 Train Models", type="primary"):
                 from collections import Counter
                 from src.data.preprocess import load_dataset
@@ -584,64 +589,61 @@ def main():
                 minority = min(class_counts.values())
                 imbalance_ratio = minority / majority
 
-                st.write("📊 Class distribution (original):", dict(class_counts))
-
-                if use_smote:  
-                    if imbalance_ratio > 0.9:  # nearly balanced
-                        st.warning("⚠️ Dataset looks balanced. Do you still want to apply SMOTE?")
-                        st.session_state.confirm_smote = True
-                    else:
-                        with st.spinner("Training Models..."):
-                            train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
-                                test_size, random_state, use_smote=True
-                            )
-                        if train_metrics and test_metrics:
+                if st.session_state.confirm_needed:
+                        if st.session_state.confirm_choice is None:
+                            st.warning("⚠️ Please choose whether to apply SMOTE before proceeding.")
+                        else:
+                            with st.spinner("Training Models..."):
+                                train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
+                                    test_size,
+                                    random_state,
+                                    use_smote=(st.session_state.confirm_choice == "Yes, apply SMOTE"),
+                                )
+                            if train_metrics and test_metrics:
                                 st.success("✅ Models trained successfully!")
-                                
-                                # Store metrics in session state for display
                                 st.session_state.train_metrics = train_metrics
                                 st.session_state.test_metrics = test_metrics
                                 st.session_state.train_samples = train_samples
                                 st.session_state.test_samples = test_samples
+
+                            # Reset confirmation state after training
+                            st.session_state.confirm_needed = False
+                            st.session_state.confirm_choice = None
+
+                # Case: first click, no prior confirmation
                 else:
-                    if imbalance_ratio < 0.3:  # strongly imbalanced 
+                    # Case: first button click → check conditions
+                    if use_smote and imbalance_ratio > 0.9:
+                        # Balanced dataset + SMOTE requested
+                        st.write("📊 Class distribution (original):", dict(class_counts))
+                        st.warning("⚠️ Dataset looks balanced. Do you still want to apply SMOTE?")
+                        st.session_state.confirm_needed = True
+                    elif not use_smote and imbalance_ratio < 0.3:
+                        # Imbalanced dataset + no SMOTE requested
+                        st.write("📊 Class distribution (original):", dict(class_counts))
                         st.warning("⚠️ Dataset is imbalanced. Do you want to apply SMOTE for fairer training?")
-                        st.session_state.confirm_smote = True
+                        st.session_state.confirm_needed = True
                     else:
-                        # No need for confirmation, proceed training directly
+                        # Safe to proceed without confirmation
                         with st.spinner("Training Models..."):
                             train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
                                 test_size, random_state, use_smote=use_smote
                             )
                         if train_metrics and test_metrics:
-                                    st.success("✅ Models trained successfully!")
-                                    
-                                    # Store metrics in session state for display
-                                    st.session_state.train_metrics = train_metrics
-                                    st.session_state.test_metrics = test_metrics
-                                    st.session_state.train_samples = train_samples
-                                    st.session_state.test_samples = test_samples
+                            st.success("✅ Models trained successfully!")
+                            st.session_state.train_metrics = train_metrics
+                            st.session_state.test_metrics = test_metrics
+                            st.session_state.train_samples = train_samples
+                            st.session_state.test_samples = test_samples
 
-            # Confirmation choice
-            if st.session_state.get("confirm_smote", False):
-                choice = st.radio("Proceed with SMOTE?", ["Yes, apply SMOTE", "No, skip SMOTE"])
-
-                if st.button("👉 Confirm & Train"):
-                    with st.spinner("Training Models..."):
-                        train_metrics, test_metrics, train_samples, test_samples = train_models_interactive(
-                            test_size, random_state, use_smote=(choice == "Yes, apply SMOTE")
-                        )
-                    if train_metrics and test_metrics:
-                        st.success("✅ Models trained successfully!")
-                                
-                        # Store metrics in session state for display
-                        st.session_state.train_metrics = train_metrics
-                        st.session_state.test_metrics = test_metrics
-                        st.session_state.train_samples = train_samples
-                        st.session_state.test_samples = test_samples
-                        st.session_state.confirm_smote = False
-                        st.rerun()
-        
+            # Show confirmation options if needed
+            if st.session_state.confirm_needed:
+                st.session_state.confirm_choice = st.radio(
+                    "Proceed with SMOTE?",
+                    ["Yes, apply SMOTE", "No, skip SMOTE"],
+                    index=None,  
+                )
+                
         with col2:
             if 'train_metrics' in st.session_state and 'test_metrics' in st.session_state:
                 st.subheader("📊 Training Results")
