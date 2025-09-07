@@ -8,7 +8,7 @@ This project builds a supervised machine learning system to predict the likeliho
 
 ### Dataset
 Place the dataset file at the project root (already included):
-`Modified_Depression_Student_Dataset_v4.csv`
+`Modified_Depression_Student_Dataset.csv`
 
 ### Requirements
 - Python 3.10+ (Windows: install from Microsoft Store or `python.org`)
