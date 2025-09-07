@@ -828,17 +828,33 @@ def main():
                     st.markdown("---")
                     st.subheader("📈 Performance Visualization")
                     
-                    # Comparison charts
-                    col1, col2 = st.columns([1, 1])
-                    
-                    with col1:
+                    # Comparison charts (show 5 metrics across two rows)
+                    row1_col1, row1_col2, row1_col3 = st.columns([1, 1, 1])
+
+                    with row1_col1:
                         fig_full_acc = create_full_dataset_chart(full_metrics, 'accuracy', 'Full Dataset Accuracy')
                         st.plotly_chart(fig_full_acc, use_container_width=True, key="full_dataset_accuracy_v2")
-                        
-                    
-                    with col2:
+
+                    with row1_col2:
+                        fig_full_prec = create_full_dataset_chart(full_metrics, 'precision', 'Full Dataset Precision')
+                        st.plotly_chart(fig_full_prec, use_container_width=True, key="full_dataset_precision_v2")
+
+                    with row1_col3:
+                        fig_full_rec = create_full_dataset_chart(full_metrics, 'recall', 'Full Dataset Recall')
+                        st.plotly_chart(fig_full_rec, use_container_width=True, key="full_dataset_recall_v2")
+
+                    row2_col1, row2_col2 = st.columns([1, 1])
+
+                    with row2_col1:
                         fig_full_f1 = create_full_dataset_chart(full_metrics, 'f1', 'Full Dataset F1-Score')
                         st.plotly_chart(fig_full_f1, use_container_width=True, key="full_dataset_f1_v2")
+
+                    with row2_col2:
+                        if any('roc_auc' in m for m in full_metrics.values()):
+                            fig_full_auc = create_full_dataset_chart(full_metrics, 'roc_auc', 'Full Dataset ROC-AUC')
+                            st.plotly_chart(fig_full_auc, use_container_width=True, key="full_dataset_roc_auc_v2")
+                        else:
+                            st.info("ROC-AUC is unavailable for at least one model.")
                         
                 else:
                     st.error("Failed to evaluate models on full dataset")
