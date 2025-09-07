@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, mean_squared_error
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
@@ -70,8 +70,6 @@ def evaluate(model: Pipeline, X_test, y_test) -> Dict[str, float]:
         "precision": precision_score(y_test, y_pred, zero_division=0),
         "recall": recall_score(y_test, y_pred, zero_division=0),
         "f1": f1_score(y_test, y_pred, zero_division=0),
-        "mse": mean_squared_error(y_test, y_pred),
-        "rmse": np.sqrt(mean_squared_error(y_test, y_pred)),
     }
     if proba is not None:
         try:

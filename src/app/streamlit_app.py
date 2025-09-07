@@ -7,7 +7,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
-from sklearn.metrics import mean_squared_error, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from src.utils.io import save_json
 import io
@@ -84,8 +84,6 @@ def evaluate_full_dataset():
                 "precision": precision_score(y, y_pred, zero_division=0),
                 "recall": recall_score(y, y_pred, zero_division=0),
                 "f1": f1_score(y, y_pred, zero_division=0),
-                "mse": mean_squared_error(y, y_pred),
-                "rmse": np.sqrt(mean_squared_error(y, y_pred)),
             }
             if proba is not None:
                 try:
@@ -217,11 +215,16 @@ def create_metrics_comparison_chart(metrics_dict, metric_name, title):
         title=title,
         labels={'x': 'Model', 'y': metric_name.upper()},
         color=values,
-        color_continuous_scale='Viridis'
+        color_continuous_scale='Viridis',
+        text=[f'{val:.4f}' for val in values]  # Add text labels directly
     )
     
-    # Add value labels on bars
-    fig.update_traces(texttemplate='%{y:.4f}', textposition='outside')
+    # Update text position and styling
+    fig.update_traces(
+        textposition='outside',
+        textfont_size=12,
+        textfont_color='black'
+    )
     
     # Calculate max value and set y-axis range to accommodate text labels
     max_value = max(values) if values else 1
@@ -236,12 +239,6 @@ def create_metrics_comparison_chart(metrics_dict, metric_name, title):
             range=[0, y_range_max],  # Set explicit y-axis range
             automargin=True  # Enable automatic margin adjustment
         )
-    )
-    
-    # Ensure text labels are fully visible
-    fig.update_traces(
-        textfont_size=12,
-        textfont_color='black'
     )
     
     return fig
@@ -258,11 +255,16 @@ def create_full_dataset_chart(metrics_dict, metric_name, title):
         title=title,
         labels={'x': 'Model', 'y': metric_name.upper()},
         color=values,
-        color_continuous_scale='Viridis'
+        color_continuous_scale='Viridis',
+        text=[f'{val:.4f}' for val in values]  # Add text labels directly
     )
     
-    # Add value labels on bars
-    fig.update_traces(texttemplate='%{y:.4f}', textposition='outside')
+    # Update text position and styling
+    fig.update_traces(
+        textposition='outside',
+        textfont_size=12,
+        textfont_color='black'
+    )
     
     # Calculate max value and set y-axis range to accommodate text labels
     max_value = max(values) if values else 1
@@ -277,12 +279,6 @@ def create_full_dataset_chart(metrics_dict, metric_name, title):
             range=[0, y_range_max],  # Set explicit y-axis range
             automargin=True  # Enable automatic margin adjustment
         )
-    )
-    
-    # Ensure text labels are fully visible
-    fig.update_traces(
-        textfont_size=12,
-        textfont_color='black'
     )
     
     return fig
@@ -605,7 +601,7 @@ def main():
                 st.subheader("📊 Performance Comparison")
                 
                 # Create comparison charts
-                metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1', 'mse', 'rmse']
+                metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1']
                 
                 for metric in metrics_to_compare:
                     if metric in train_df.columns and metric in test_df.columns:
@@ -619,24 +615,30 @@ def main():
                             name='Training',
                             x=models,
                             y=train_values,
-                            marker_color='lightblue'
+                            marker_color='lightblue',
+                            text=[f'{val:.4f}' for val in train_values],
+                            textposition='outside'
                         ))
                         
                         fig.add_trace(go.Bar(
                             name='Testing',
                             x=models,
                             y=test_values,
-                            marker_color='lightcoral'
+                            marker_color='lightcoral',
+                            text=[f'{val:.4f}' for val in test_values],
+                            textposition='outside'
                         ))
                         
                         fig.update_layout(
                             title=f'{metric.upper()} Comparison (Training vs Testing)',
                             xaxis_title='Model',
                             yaxis_title=metric.upper(),
-                            barmode='group'
+                            barmode='group',
+                            height=500,
+                            margin=dict(t=100, b=80, l=60, r=60)
                         )
                         
-                        st.plotly_chart(fig, use_container_width=True, key=f"train_tab_{metric}")
+                        st.plotly_chart(fig, use_container_width=True, key=f"train_tab_{metric}_v2")
             else:
                 st.info("👆 Configure training parameters and click 'Train Models' to see results")
     
@@ -669,7 +671,7 @@ def main():
             st.subheader("📊 Performance Comparison (Training vs Testing)")
             
             # Create comparison charts for all metrics
-            metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1', 'mse', 'rmse']
+            metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1']
             
             for metric in metrics_to_compare:
                 if metric in train_df.columns and metric in test_df.columns:
@@ -683,24 +685,30 @@ def main():
                         name='Training',
                         x=models,
                         y=train_values,
-                        marker_color='lightblue'
+                        marker_color='lightblue',
+                        text=[f'{val:.4f}' for val in train_values],
+                        textposition='outside'
                     ))
                     
                     fig.add_trace(go.Bar(
                         name='Testing',
                         x=models,
                         y=test_values,
-                        marker_color='lightcoral'
+                        marker_color='lightcoral',
+                        text=[f'{val:.4f}' for val in test_values],
+                        textposition='outside'
                     ))
                     
                     fig.update_layout(
                         title=f'{metric.upper()} Comparison (Training vs Testing)',
                         xaxis_title='Model',
                         yaxis_title=metric.upper(),
-                        barmode='group'
+                        barmode='group',
+                        height=500,
+                        margin=dict(t=100, b=80, l=60, r=60)
                     )
                     
-                    st.plotly_chart(fig, use_container_width=True, key=f"data_viz_train_test_{metric}")
+                    st.plotly_chart(fig, use_container_width=True, key=f"data_viz_train_test_{metric}_v2")
         
         # Also show the standard metrics from file if available
         metrics_path = MODELS_DIR / "metrics.json"
@@ -721,54 +729,18 @@ def main():
                 
                 with col1:
                     fig_acc = create_metrics_comparison_chart(test_metrics, 'accuracy', 'Accuracy Comparison')
-                    st.plotly_chart(fig_acc, use_container_width=True, key="data_viz_accuracy")
+                    st.plotly_chart(fig_acc, use_container_width=True, key="data_viz_accuracy_v2")
                     
                     fig_f1 = create_metrics_comparison_chart(test_metrics, 'f1', 'F1-Score Comparison')
-                    st.plotly_chart(fig_f1, use_container_width=True, key="data_viz_f1")
+                    st.plotly_chart(fig_f1, use_container_width=True, key="data_viz_f1_v2")
                 
                 with col2:
                     fig_prec = create_metrics_comparison_chart(test_metrics, 'precision', 'Precision Comparison')
-                    st.plotly_chart(fig_prec, use_container_width=True, key="data_viz_precision")
+                    st.plotly_chart(fig_prec, use_container_width=True, key="data_viz_precision_v2")
                     
                     fig_rec = create_metrics_comparison_chart(test_metrics, 'recall', 'Recall Comparison')
-                    st.plotly_chart(fig_rec, use_container_width=True, key="data_viz_recall")
+                    st.plotly_chart(fig_rec, use_container_width=True, key="data_viz_recall_v2")
             
-            # MSE and RMSE sections
-            st.subheader("📉 Error Metrics Analysis")
-            
-            col_mse, col_rmse = st.columns([1, 1])
-            
-            with col_mse:
-                st.markdown("### Mean Squared Error (MSE)")
-                # MSE comparison chart
-                fig_mse = create_metrics_comparison_chart(test_metrics, 'mse', 'MSE Comparison (Lower is Better)')
-                st.plotly_chart(fig_mse, use_container_width=True, key="data_viz_mse")
-                
-                # MSE table
-                mse_data = {model: metrics.get('mse', 0) for model, metrics in test_metrics.items()}
-                mse_df = pd.DataFrame(list(mse_data.items()), columns=['Model', 'MSE'])
-                mse_df = mse_df.sort_values('MSE')
-                st.dataframe(mse_df, use_container_width=True)
-                
-                # Best model
-                best_mse_model = min(mse_data, key=mse_data.get)
-                st.success(f"🏆 Best MSE: **{best_mse_model}** with MSE = {mse_data[best_mse_model]:.4f}")
-            
-            with col_rmse:
-                st.markdown("### Root Mean Squared Error (RMSE)")
-                # RMSE comparison chart
-                fig_rmse = create_metrics_comparison_chart(test_metrics, 'rmse', 'RMSE Comparison (Lower is Better)')
-                st.plotly_chart(fig_rmse, use_container_width=True, key="data_viz_rmse")
-                
-                # RMSE table
-                rmse_data = {model: metrics.get('rmse', 0) for model, metrics in test_metrics.items()}
-                rmse_df = pd.DataFrame(list(rmse_data.items()), columns=['Model', 'RMSE'])
-                rmse_df = rmse_df.sort_values('RMSE')
-                st.dataframe(rmse_df, use_container_width=True)
-                
-                # Best model
-                best_rmse_model = min(rmse_data, key=rmse_data.get)
-                st.success(f"🏆 Best RMSE: **{best_rmse_model}** with RMSE = {rmse_data[best_rmse_model]:.4f}")
         else:
             st.warning("No metrics found. Please train models first using the 'Train Models' tab.")
     
@@ -793,17 +765,13 @@ def main():
                     
                     with col1:
                         fig_full_acc = create_full_dataset_chart(full_metrics, 'accuracy', 'Full Dataset Accuracy')
-                        st.plotly_chart(fig_full_acc, use_container_width=True, key="full_dataset_accuracy")
+                        st.plotly_chart(fig_full_acc, use_container_width=True, key="full_dataset_accuracy_v2")
                         
-                        fig_full_mse = create_full_dataset_chart(full_metrics, 'mse', 'Full Dataset MSE')
-                        st.plotly_chart(fig_full_mse, use_container_width=True, key="full_dataset_mse")
                     
                     with col2:
                         fig_full_f1 = create_full_dataset_chart(full_metrics, 'f1', 'Full Dataset F1-Score')
-                        st.plotly_chart(fig_full_f1, use_container_width=True, key="full_dataset_f1")
+                        st.plotly_chart(fig_full_f1, use_container_width=True, key="full_dataset_f1_v2")
                         
-                        fig_full_rmse = create_full_dataset_chart(full_metrics, 'rmse', 'Full Dataset RMSE')
-                        st.plotly_chart(fig_full_rmse, use_container_width=True, key="full_dataset_rmse")
                 else:
                     st.error("Failed to evaluate models on full dataset")
         else:
