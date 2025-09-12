@@ -23,6 +23,11 @@ if 'prediction_history' not in st.session_state:
 
 @st.cache_resource
 def load_models():
+    """Load trained models from the `models/` directory once per app session.
+
+    Returns a dict mapping model name to the fitted sklearn Pipeline. Cached as a
+    Streamlit resource so subsequent calls reuse the same objects.
+    """
     models = {}
     for name in ["svm", "random_forest", "logistic_regression"]:
         path = MODELS_DIR / f"{name}.joblib"
@@ -33,6 +38,10 @@ def load_models():
 
 @st.cache_resource
 def load_feature_info():
+    """Load the list/order of features expected by the trained pipelines.
+
+    Falls back to a sensible default list if the artifact is missing.
+    """
     if FEATURE_INFO_PATH.exists():
         with open(FEATURE_INFO_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -49,7 +58,10 @@ def load_feature_info():
 
 @st.cache_data
 def load_full_dataset():
-    """Load the full dataset for visualization and full dataset evaluation"""
+    """Load the full dataset for visualization and full-dataset evaluation.
+
+    Returns X (features) and y (target) exactly as used by training pipelines.
+    """
     try:
         from src.data.preprocess import load_dataset
         X, y = load_dataset("Depression_Student_Dataset.csv")
@@ -61,7 +73,10 @@ def load_full_dataset():
 
 @st.cache_data
 def evaluate_full_dataset():
-    """Evaluate models on the full dataset (100%)"""
+    """Evaluate all loaded models on 100% of the dataset.
+
+    Useful for a quick sanity check of generalization on the whole data.
+    """
     X, y = load_full_dataset()
     if X is None or y is None:
         return {}
@@ -110,7 +125,10 @@ def convert_sleep_duration(sleep_str: str) -> float:
 
 
 def get_input_features(features: list[str]) -> pd.DataFrame:
-    """Get input features from user interface"""
+    """Collect a single-sample input row from the UI, matching train features.
+
+    Returns a DataFrame with one row and columns aligned to `features`.
+    """
     inputs = {}
     
     # Gender: 0=Male, 1=Female
@@ -148,7 +166,7 @@ def get_input_features(features: list[str]) -> pd.DataFrame:
 
 
 def create_data_overview_visualizations(X, y):
-    """Create data overview visualizations"""
+    """Build Plotly figures to summarize target distribution and feature patterns."""
     # Combine features and target for visualization
     df_viz = X.copy()
     df_viz['Depression'] = y
@@ -205,7 +223,7 @@ def create_data_overview_visualizations(X, y):
 
 
 def create_metrics_comparison_chart(metrics_dict, metric_name, title):
-    """Create comparison charts for metrics"""
+    """Create a bar chart that compares one metric across models."""
     models = list(metrics_dict.keys())
     values = [metrics_dict[model].get(metric_name, 0) for model in models]
     
@@ -245,7 +263,7 @@ def create_metrics_comparison_chart(metrics_dict, metric_name, title):
 
 
 def create_full_dataset_chart(metrics_dict, metric_name, title):
-    """Create charts for full dataset performance"""
+    """Create a bar chart for the full-dataset evaluation results."""
     models = list(metrics_dict.keys())
     values = [metrics_dict[model].get(metric_name, 0) for model in models]
     
@@ -285,7 +303,7 @@ def create_full_dataset_chart(metrics_dict, metric_name, title):
 
 
 def add_prediction_to_history(model_name, inputs, prediction, probability):
-    """Add prediction to history"""
+    """Append a structured record of the latest prediction to session history."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     prediction_record = {
         'timestamp': timestamp,
@@ -302,7 +320,7 @@ def add_prediction_to_history(model_name, inputs, prediction, probability):
 
 
 def convert_history_to_csv():
-    """Convert prediction history to CSV format"""
+    """Render the in-memory prediction history as CSV for download."""
     if not st.session_state.prediction_history:
         return None
     
@@ -339,7 +357,11 @@ def convert_history_to_csv():
 
 
 def train_models_interactive(test_size, random_state=42, use_smote=False):
-    """Train models with custom test size and return both train and test metrics"""
+    """Train all models using the chosen split and optional SMOTE.
+
+    Returns training and testing metrics for side-by-side comparison, and the
+    number of samples used in each split.
+    """
     try:
         from src.data.preprocess import load_dataset, train_test_split_dataset, apply_smote
         from src.models.pipelines import build_models, evaluate, save_model
@@ -392,7 +414,7 @@ def train_models_interactive(test_size, random_state=42, use_smote=False):
 
 
 def get_feature_descriptions():
-    """Get feature descriptions for the dataset"""
+    """Human-readable explanations for each feature used in the dataset."""
     return {
         "Gender": "Student's gender (0=Male, 1=Female)",
         "Academic_Pressure": "Level of academic pressure experienced (1-5 scale, 1=Very Low, 5=Very High)",
@@ -406,6 +428,15 @@ def get_feature_descriptions():
 
 
 def main():
+    """Streamlit app entry point.
+
+    Tabs:
+    - Prediction: collect inputs, run `model.predict`, store history.
+    - Data Overview: describe features and show basic plots.
+    - Train Models: fit pipelines with chosen split/SMOTE and compare metrics.
+    - Data Visualization: visualize metrics from interactive or saved runs.
+    - Full Dataset Performance: evaluate all models on 100% of the data.
+    """
     # Set page config for wider layout
     st.set_page_config(
         page_title="Student Mental Health Prediction Dashboard",
@@ -449,6 +480,7 @@ def main():
             st.subheader("🤖 Model Selection & Prediction")
             selected_model = st.selectbox("Select Model", list(models.keys()))
             
+            # Trigger single-sample inference against the selected model
             if st.button("🔮 Predict", type="primary"):
                 if selected_model in models:
                     model = models[selected_model]

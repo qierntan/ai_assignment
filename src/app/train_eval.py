@@ -10,6 +10,14 @@ from src.utils.io import save_json, ensure_dir
 
 
 def train_all(csv_path: str, out_dir: str = "models") -> Dict[str, Dict[str, float]]:
+    """Train all supported models and save artifacts.
+
+    Workflow:
+    1) Load and split dataset.
+    2) Build pipelines (preprocessing + estimator) for SVM/RF/LR.
+    3) Fit on train, evaluate on test.
+    4) Persist models and write metrics.json.
+    """
     X, y = load_dataset(csv_path)
     X_train, X_test, y_train, y_test = train_test_split_dataset(X, y)
 
@@ -30,6 +38,10 @@ def train_all(csv_path: str, out_dir: str = "models") -> Dict[str, Dict[str, flo
 
 
 def train_single(csv_path: str, out_dir: str, model_name: str) -> Dict[str, Dict[str, float]]:
+    """Train only one specified model and update artifacts/metrics.
+
+    Raises if the model name is unknown.
+    """
     X, y = load_dataset(csv_path)
     X_train, X_test, y_train, y_test = train_test_split_dataset(X, y)
 
@@ -45,7 +57,7 @@ def train_single(csv_path: str, out_dir: str, model_name: str) -> Dict[str, Dict
     m = evaluate(model, X_test, y_test)
     save_model(model, Path(out_dir) / f"{model_name}.joblib")
 
-    # Merge/update metrics.json
+    # Merge/update metrics.json so previous results are preserved
     metrics_path = Path(out_dir) / "metrics.json"
     existing: Dict[str, Dict[str, float]] = {}
     if metrics_path.exists():
@@ -62,6 +74,7 @@ def train_single(csv_path: str, out_dir: str, model_name: str) -> Dict[str, Dict
 
 
 def main() -> None:
+    """CLI entry point to train models and print test metrics as a table."""
     parser = argparse.ArgumentParser(description="Train and evaluate student depression models")
     parser.add_argument("--csv", type=str, default="Depression_Student_Dataset.csv", help="Path to CSV dataset")
     parser.add_argument("--out", type=str, default="models", help="Output directory for models and metrics")

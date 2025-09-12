@@ -14,6 +14,10 @@ from sklearn.linear_model import LogisticRegression
 
 
 def build_numeric_preprocessor(numeric_features: list[str]) -> ColumnTransformer:
+    """Create a ColumnTransformer that imputes and scales numeric features.
+
+    Keeps only the listed numeric columns and drops the rest.
+    """
     numeric_pipeline = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -30,6 +34,11 @@ def build_numeric_preprocessor(numeric_features: list[str]) -> ColumnTransformer
 
 
 def build_models(numeric_features: list[str]) -> Dict[str, Pipeline]:
+    """Build sklearn Pipelines that include preprocessing + classifier.
+
+    Returns SVM, RandomForest, and LogisticRegression pipelines with class_weight
+    set to "balanced" to mitigate class imbalance.
+    """
     preprocessor = build_numeric_preprocessor(numeric_features)
 
     svm_pipeline = Pipeline(
@@ -63,6 +72,10 @@ def build_models(numeric_features: list[str]) -> Dict[str, Pipeline]:
 
 
 def evaluate(model: Pipeline, X_test, y_test) -> Dict[str, float]:
+    """Compute standard classification metrics for a fitted model.
+
+    If the estimator exposes predict_proba, also compute ROC-AUC.
+    """
     proba = None
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X_test)[:, 1]
@@ -82,12 +95,14 @@ def evaluate(model: Pipeline, X_test, y_test) -> Dict[str, float]:
 
 
 def save_model(model: Pipeline, out_path: str | Path) -> None:
+    """Persist a fitted Pipeline to disk using joblib."""
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, out_path)
 
 
 def load_model(path: str | Path) -> Pipeline:
+    """Load a previously saved Pipeline from disk."""
     return joblib.load(path)
 
 
